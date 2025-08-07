@@ -1,101 +1,34 @@
 # Quicktype MCP Server
 
-An MCP (Model Context Protocol) server for generating models from JSON. This tool simplifies the process of creating type-safe models for various programming languages.
+An MCP (Model Context Protocol) server specifically designed for generating Dart models from JSON. This tool simplifies the process of creating type-safe Dart models for Flutter and Dart applications.
 
 ## Features
 
-- No local dependencies (no Node.js or npm required)
-- Generates models from JSON input for multiple languages
+- Specialized for Dart model generation
 - Automatic JSON validation and fixing
-- Supports both interactive and file-based JSON input
-- Background server mode for continuous operation
+- Generates null-safe Dart models
+- Handles complex nested JSON structures
+- Includes serialization/deserialization methods
 
 ## Prerequisites
 
 - Python 3.10 or higher
 - Internet connection (to access the quicktype.io API)
 
-## Installation
+## Usage as MCP Server
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/quicktype-mcp.git
-   cd quicktype-mcp
-   ```
+This tool is designed to be used as an MCP server that other applications can connect to. The server exposes a simple API for generating Dart models from JSON input.
 
-2. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows, use: .venv\Scripts\activate
-   ```
+### API
 
-3. Install dependencies:
-   ```bash
-   pip install -e .
-   ```
+The server exposes the following endpoint:
 
-## Usage
+- `generate_model`: Generates a Dart model from JSON input
 
-### CLI Options
-
-```bash
-python cli.py [options]
-```
-
-Available options:
-- `--server-only`: Run only the MCP server
-- `--json <json_input>`: JSON input to process (string or file path)
-- `--language <language>`: Target language (default: dart)
-- `--class-name <name>`: Class name for the generated model (default: Model)
-- `--output <file_path>`: Output file path
-- `--windsurf`: Run in Windsurf MCP compatibility mode
-
-### Running the Server
-
-You can run the server in two modes:
-
-#### Server-only mode
-
-This mode runs the MCP server in the foreground:
-
-```bash
-python cli.py --server-only
-```
-
-#### Background server mode
-
-This mode runs the MCP server in the background:
-
-```bash
-python cli.py
-```
-
-### Processing JSON directly
-
-You can process JSON directly from the command line:
-
-```bash
-# Process JSON from a string
-python cli.py --json '{"name": "John", "age": 30}' --class-name Person --language dart
-
-# Process JSON from a file
-python cli.py --json input.json --class-name Person --language kotlin --output Person.kt
-```
-
-## Supported Languages
-
-The tool supports generating models for the following languages:
-
-- Dart (default)
-- TypeScript
-- Kotlin
-- Swift
-- Python
-- Java
-- Go
-
-
-## Using with Windsurf MCP
+Parameters:
+- `json_input`: The JSON string to generate a model from
+- `class_name`: The name of the generated class (default: Model)
+- `language`: Currently only supports 'dart'
 
 ```json
 {
@@ -105,8 +38,7 @@ The tool supports generating models for the following languages:
       "--directory",
       "/path/to/quicktype-mcp",
       "run",
-      "cli.py",
-      "--windsurf"
+      "main.py",
     ]
   }
 }
@@ -114,18 +46,11 @@ The tool supports generating models for the following languages:
 
 ### Available MCP Tools
 
-1. **generate_model**: Generate code models from JSON
+1. **generate_model**: Generate Dart models from JSON
    - Parameters:
      - `json_input`: The JSON string to generate a model from
      - `class_name`: The name of the generated class (default: "Model")
-     - `language`: The programming language to generate code for (default: "dart")
-
-2. **list_languages**: List supported programming languages
-   - No parameters required
-
-3. **fix_json**: Fix invalid JSON
-   - Parameters:
-     - `json_input`: The JSON string to fix
+     - `language`: Currently only supports 'dart'
 
 ```
 
@@ -138,13 +63,17 @@ If you encounter issues with the server not running, make sure:
 3. The correct Python version is being used (3.10+)
 
 For issues with the generated models:
-1. Ensure your JSON is valid (use the `fix_json` tool if needed)
-2. Check that the requested language is supported
-3. Try simplifying complex JSON structures if you encounter errors
+1. Ensure your JSON is valid
+2. Try simplifying complex JSON structures if you encounter errors
+3. Check that the class name follows Dart naming conventions
 
-## Contributing
+## Features of Generated Dart Models
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Null Safety**: All fields are properly marked as nullable when appropriate
+- **JSON Serialization**: Includes `fromJson` and `toJson` methods
+- **Nested Objects**: Properly handles nested objects with their own classes
+- **Lists and Maps**: Correctly handles collections and their generic types
+- **Type Safety**: Uses appropriate Dart types for JSON values
 
 ## License
 

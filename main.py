@@ -16,54 +16,11 @@ logger = logging.getLogger("quicktype-mcp")
 # Create the MCP server
 mcp = FastMCP(name="quicktype-mcp")
 
-# Sample complex response to use as context for model generation
-SAMPLE_COMPLEX_RESPONSE = {
-    "code": 200,
-    "message": "Data retrieved successfully",
-    "data": {
-        "server": {
-            "id": "SRV-001",
-            "name": "Main Server",
-            "enabled": True,
-            "metadata": {
-                "location": {
-                    "building": "HQ",
-                    "floor": 3
-                },
-                "installedDate": "2023-05-15T08:00:00Z"
-            }
-        },
-        "devices": [
-            {
-                "deviceId": 1,
-                "name": "Device One",
-                "enabled": True,
-                "registers": [
-                    {
-                        "registerId": 101,
-                        "name": "Temperature",
-                        "value": 25.5,
-                        "unit": "°C"
-                    }
-                ]
-            }
-        ],
-        "diagnostics": {
-            "lastConnection": "2024-04-05T12:34:56.789Z",
-            "errorCount": 0
-        }
-    }
-}
+
 
 # Models
 class Language(str, Enum):
     DART = "dart"
-    TYPESCRIPT = "typescript"
-    KOTLIN = "kotlin"
-    SWIFT = "swift"
-    PYTHON = "python"
-    JAVA = "java"
-    GO = "go"
 
 class QuicktypeService:
     """Service to interact with quicktype.io API."""
@@ -97,7 +54,268 @@ class QuicktypeService:
 
     @staticmethod
     def _generate_dart_model(json_data, class_name, parent_name='', nested_classes=None):
-        """Generate Dart model class with nullable fields and proper handling of nested objects"""
+        """Generate Dart model class with nullable fields and proper handling of nested objects
+        
+        Args:
+            json_data: The JSON data to generate a model from
+            class_name: The name of the generated class
+            parent_name: The name of the parent class (used for nested objects)
+            nested_classes: A dictionary of nested classes (used for recursive generation)
+        
+        Sample JSON:
+        {
+            "data": {
+                "id": 101,
+                "name": "Test User",
+                "active": true,
+                "created": "2023-10-15T08:30:00Z",
+                "scores": [
+                85.5,
+                null,
+                90
+                ],
+                "address": {
+                "city": "San Francisco",
+                "coordinates": {
+                    "lat": 37.7749,
+                    "lng": -122.4194
+                }
+                },
+                "tags": [
+                "user",
+                "premium"
+                ],
+                "meta": {
+                "devices": [
+                    "mobile",
+                    "desktop"
+                ],
+                "preferences": {
+                    "theme": "dark",
+                    "notifications": {
+                    "email": true,
+                    "push": null
+                    }
+                },
+                "lastSeen": "2023-10-20T14:00:00Z"
+                },
+                "groups": [
+                {
+                    "id": 1,
+                    "name": "Admin"
+                }
+                ],
+                "expires": null
+            }
+        }
+
+        Generated Dart Model:
+                // To parse this JSON data, do
+                //
+                //     final sampleResponse = sampleResponseFromJson(jsonString);
+
+                import 'dart:convert';
+
+                SampleResponse sampleResponseFromJson(String str) => SampleResponse.fromJson(json.decode(str));
+
+                String sampleResponseToJson(SampleResponse data) => json.encode(data.toJson());
+
+                class SampleResponse {
+                    SampleResponseData? data;
+
+                    SampleResponse({
+                        this.data,
+                    });
+
+                    factory SampleResponse.fromJson(Map<String, dynamic> json) => SampleResponse(
+                        data: json["data"] == null ? null : SampleResponseData.fromJson(json["data"]),
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "data": data?.toJson(),
+                    };
+                }
+
+                class SampleResponseData {
+                    int? id;
+                    String? name;
+                    bool? active;
+                    DateTime? created;
+                    List<double?>? scores;
+                    Address? address;
+                    List<String>? tags;
+                    Meta? meta;
+                    List<Group>? groups;
+                    dynamic expires;
+
+                    SampleResponseData({
+                        this.id,
+                        this.name,
+                        this.active,
+                        this.created,
+                        this.scores,
+                        this.address,
+                        this.tags,
+                        this.meta,
+                        this.groups,
+                        this.expires,
+                    });
+
+                    factory SampleResponseData.fromJson(Map<String, dynamic> json) => SampleResponseData(
+                        id: json["id"],
+                        name: json["name"],
+                        active: json["active"],
+                        created: json["created"] == null ? null : DateTime.parse(json["created"]),
+                        scores: json["scores"] == null ? [] : List<double?>.from(json["scores"]!.map((x) => x?.toDouble())),
+                        address: json["address"] == null ? null : Address.fromJson(json["address"]),
+                        tags: json["tags"] == null ? [] : List<String>.from(json["tags"]!.map((x) => x)),
+                        meta: json["meta"] == null ? null : Meta.fromJson(json["meta"]),
+                        groups: json["groups"] == null ? [] : List<Group>.from(json["groups"]!.map((x) => Group.fromJson(x))),
+                        expires: json["expires"],
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "id": id,
+                        "name": name,
+                        "active": active,
+                        "created": created?.toIso8601String(),
+                        "scores": scores == null ? [] : List<dynamic>.from(scores!.map((x) => x)),
+                        "address": address?.toJson(),
+                        "tags": tags == null ? [] : List<dynamic>.from(tags!.map((x) => x)),
+                        "meta": meta?.toJson(),
+                        "groups": groups == null ? [] : List<dynamic>.from(groups!.map((x) => x.toJson())),
+                        "expires": expires,
+                    };
+                }
+
+                class Address {
+                    String? city;
+                    Coordinates? coordinates;
+
+                    Address({
+                        this.city,
+                        this.coordinates,
+                    });
+
+                    factory Address.fromJson(Map<String, dynamic> json) => Address(
+                        city: json["city"],
+                        coordinates: json["coordinates"] == null ? null : Coordinates.fromJson(json["coordinates"]),
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "city": city,
+                        "coordinates": coordinates?.toJson(),
+                    };
+                }
+
+                class Coordinates {
+                    double? lat;
+                    double? lng;
+
+                    Coordinates({
+                        this.lat,
+                        this.lng,
+                    });
+
+                    factory Coordinates.fromJson(Map<String, dynamic> json) => Coordinates(
+                        lat: json["lat"]?.toDouble(),
+                        lng: json["lng"]?.toDouble(),
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "lat": lat,
+                        "lng": lng,
+                    };
+                }
+
+                class Group {
+                    int? id;
+                    String? name;
+
+                    Group({
+                        this.id,
+                        this.name,
+                    });
+
+                    factory Group.fromJson(Map<String, dynamic> json) => Group(
+                        id: json["id"],
+                        name: json["name"],
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "id": id,
+                        "name": name,
+                    };
+                }
+
+                class Meta {
+                    List<String>? devices;
+                    Preferences? preferences;
+                    DateTime? lastSeen;
+
+                    Meta({
+                        this.devices,
+                        this.preferences,
+                        this.lastSeen,
+                    });
+
+                    factory Meta.fromJson(Map<String, dynamic> json) => Meta(
+                        devices: json["devices"] == null ? [] : List<String>.from(json["devices"]!.map((x) => x)),
+                        preferences: json["preferences"] == null ? null : Preferences.fromJson(json["preferences"]),
+                        lastSeen: json["lastSeen"] == null ? null : DateTime.parse(json["lastSeen"]),
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "devices": devices == null ? [] : List<dynamic>.from(devices!.map((x) => x)),
+                        "preferences": preferences?.toJson(),
+                        "lastSeen": lastSeen?.toIso8601String(),
+                    };
+                }
+
+                class Preferences {
+                    String? theme;
+                    Notifications? notifications;
+
+                    Preferences({
+                        this.theme,
+                        this.notifications,
+                    });
+
+                    factory Preferences.fromJson(Map<String, dynamic> json) => Preferences(
+                        theme: json["theme"],
+                        notifications: json["notifications"] == null ? null : Notifications.fromJson(json["notifications"]),
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "theme": theme,
+                        "notifications": notifications?.toJson(),
+                    };
+                }
+
+                class Notifications {
+                    bool? email;
+                    dynamic push;
+
+                    Notifications({
+                        this.email,
+                        this.push,
+                    });
+
+                    factory Notifications.fromJson(Map<String, dynamic> json) => Notifications(
+                        email: json["email"],
+                        push: json["push"],
+                    );
+
+                    Map<String, dynamic> toJson() => {
+                        "email": email,
+                        "push": push,
+                    };
+                }
+
+
+        Returns:
+            A string containing the generated Dart model code
+        """
         if nested_classes is None:
             nested_classes = {}
         
@@ -219,30 +437,14 @@ class QuicktypeService:
             return "\n".join(full_code)
         
         return "\n".join(class_code)
-
-    @staticmethod
-    def _generate_typescript_model(json_data: dict, class_name: str) -> str:
-        """Generate a TypeScript model from JSON data."""
-        # Placeholder for TypeScript model generation
-        return f"// TypeScript model for {class_name}\n// Not implemented yet"
     
-    @staticmethod
-    def _generate_kotlin_model(json_data: dict, class_name: str) -> str:
-        """Generate a Kotlin model from JSON data."""
-        # Placeholder for Kotlin model generation
-        return f"// Kotlin model for {class_name}\n// Not implemented yet"
+    # @staticmethod
+    # def _generate_kotlin_model(json_data: dict, class_name: str) -> str:
+    #     """Generate a Kotlin model from JSON data."""
+    #     # Placeholder for Kotlin model generation
+    #     return f"// Kotlin model for {class_name}\n// Not implemented yet"
     
-    @staticmethod
-    def _generate_swift_model(json_data: dict, class_name: str) -> str:
-        """Generate a Swift model from JSON data."""
-        # Placeholder for Swift model generation
-        return f"// Swift model for {class_name}\n// Not implemented yet"
-    
-    @staticmethod
-    def _generate_python_model(json_data: dict, class_name: str) -> str:
-        """Generate a Python model from JSON data."""
-        # Placeholder for Python model generation
-        return f"# Python model for {class_name}\n# Not implemented yet"
+ 
     
     @staticmethod
     async def generate_model(json_input: str, class_name: str = "Model", language: str = "dart") -> Dict[str, Any]:
