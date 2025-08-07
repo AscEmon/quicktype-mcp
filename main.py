@@ -1,10 +1,7 @@
 import json
-import httpx
 import logging
-import re
 from enum import Enum
-from typing import Dict, Any, List, Optional
-from pydantic import BaseModel
+from typing import Dict, Any, List
 
 # Import MCP library
 from mcp.server import FastMCP
@@ -29,22 +26,40 @@ class Language(str, Enum):
     SWIFT = "swift"
     PYTHON = "python"
     JAVA = "java"
-    CSHARP = "csharp"
     GO = "go"
-    RUBY = "ruby"
-    RUST = "rust"
-    FLOW = "flow"
-    SCALA = "scala"
-    CPP = "cpp"
-    OBJECTIVE_C = "objective-c"
-    ELM = "elm"
-    JSON_SCHEMA = "schema"
-    PIKE = "pike"
-    HASKELL = "haskell"
+
+   
 
 class QuicktypeService:
     """Service to interact with quicktype.io API."""
     
+    @staticmethod
+    def get_dart_type(value, make_nullable=True):
+        """Get Dart type for a value, making it nullable by default"""
+        if isinstance(value, bool):
+            return 'bool?' if make_nullable else 'bool'
+        elif isinstance(value, int):
+            return 'int?' if make_nullable else 'int'
+        elif isinstance(value, float):
+            return 'double?' if make_nullable else 'double'
+        elif isinstance(value, str):
+            return 'String?' if make_nullable else 'String'
+        elif isinstance(value, dict):
+            return 'Map<String, dynamic>?' if make_nullable else 'Map<String, dynamic>'
+        elif isinstance(value, list):
+            if value and all(isinstance(item, dict) for item in value):
+                item_class = f"{class_name}Item"
+                return f'List<{item_class}>?' if make_nullable else f'List<{item_class}>'
+            return 'List<dynamic>?' if make_nullable else 'List<dynamic>'
+        return 'dynamic?' if make_nullable else 'dynamic'
+
+    @staticmethod
+    def _generate_class_name(parent_name, key):
+        """Generate class name using parent class name as prefix"""
+        if not parent_name:
+            return key.title().replace('_', '')
+        return f"{parent_name}{key.title().replace('_', '')}"
+
     @staticmethod
     async def generate_model(json_input: str, class_name: str = "Model", language: str = "dart") -> Dict[str, Any]:
         """Generate a model from JSON input.
@@ -100,141 +115,41 @@ class QuicktypeService:
             return {"error": error_msg}
             
     @staticmethod
-    def _generate_dart_model(json_data: dict, class_name: str) -> str:
-        """Generate a Dart model from JSON data.
-        
-        Args:
-            json_data: The parsed JSON data
-            class_name: The name of the generated class
+    def _generate_dart_model(json_data, class_name, parent_name=''):
+        """Generate Dart model class with nullable fields"""
+        class_code = [f"class {class_name} {{"]
+        constructors = [f"  {class_name}({{"]
+        from_json = [f"  factory {class_name}.fromJson(Map<String, dynamic> json) => {class_name}("]
+        to_json = ["  Map<String, dynamic> toJson() => {"]
+
+        for json_key, value in json_data.items():
+            field_name = json_key
+            field_type = QuicktypeService.get_dart_type(value)
             
-        Returns:
-            The generated Dart code as a string
-        """
-        # Helper function to determine Dart type from a value
-        def get_dart_type(value):
-            if isinstance(value, bool):
-                return "bool"
-            elif isinstance(value, int):
-                return "int"
-            elif isinstance(value, float):
-                return "double"
-            elif isinstance(value, str):
-                return "String"
-            elif isinstance(value, list):
-                if value and all(isinstance(item, dict) for item in value):
-                    # All items are objects, try to determine the class name
-                    item_class = f"{class_name}Item"
-                    return f"List<{item_class}>"
-                elif value and all(isinstance(item, (int, float, str, bool)) for item in value):
-                    # All items are primitives, determine their type
-                    item_type = get_dart_type(value[0])
-                    return f"List<{item_type}>"
-                else:
-                    return "List<dynamic>"
-            elif isinstance(value, dict):
-                return "Map<String, dynamic>"
+            # Add field declaration
+            class_code.append(f"  final {field_type} {field_name};")
+            
+            # Add to constructor
+            constructors.append(f"    this.{field_name},")
+            
+            # Add to fromJson with null check
+            if field_type.endswith('?'):
+                from_json.append(f"    {field_name}: json['{json_key}'],")
             else:
-                return "dynamic"
-        
-        # Helper function to convert snake_case to camelCase
-        def to_camel_case(snake_str):
-            components = snake_str.split('_')
-            return components[0] + ''.join(x.title() for x in components[1:])
-        
-        # Helper function to generate a class from a JSON object
-        def generate_class(data, name):
-            class_code = [f"class {name} {{"]  # Start class definition
-            fields = []
-            constructors = [f"  {name}({{"]  # Start constructor
-            from_json = [f"  factory {name}.fromJson(Map<String, dynamic> json) => {name}("]  # Start fromJson
-            to_json = ["  Map<String, dynamic> toJson() => {"]  # Start toJson
+                from_json.append(f"    {field_name}: json['{json_key}'],")
             
-            # Process each field in the JSON object
-            for key, value in data.items():
-                field_name = to_camel_case(key)  # Convert to camelCase for Dart convention
-                json_key = key  # Keep original key for JSON serialization
-                
-                if isinstance(value, dict):
-                    # Nested object, create a new class
-                    nested_class_name = f"{name}{key.title().replace('_', '')}"
-                    field_type = nested_class_name
-                    fields.append(f"  final {field_type} {field_name};")  # Add field
-                    constructors.append(f"    required this.{field_name},")  # Add to constructor
-                    from_json.append(f"    {field_name}: {field_type}.fromJson(json['{json_key}']),")  # Add to fromJson
-                    to_json.append(f"    '{json_key}': {field_name}.toJson(),")  # Add to toJson
-                elif isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
-                    # List of objects, create a new class for the items
-                    item_class_name = f"{name}{key.title().replace('_', '')}Item"
-                    field_type = f"List<{item_class_name}>"
-                    fields.append(f"  final {field_type} {field_name};")  # Add field
-                    constructors.append(f"    required this.{field_name},")  # Add to constructor
-                    from_json.append(f"    {field_name}: List<{item_class_name}>.from(json['{json_key}'].map((x) => {item_class_name}.fromJson(x))),")  # Add to fromJson
-                    to_json.append(f"    '{json_key}': List<dynamic>.from({field_name}.map((x) => x.toJson())),")  # Add to toJson
-                else:
-                    # Simple field
-                    field_type = get_dart_type(value)
-                    fields.append(f"  final {field_type} {field_name};")  # Add field
-                    constructors.append(f"    required this.{field_name},")  # Add to constructor
-                    from_json.append(f"    {field_name}: json['{json_key}'],")  # Add to fromJson
-                    to_json.append(f"    '{json_key}': {field_name},")  # Add to toJson
-            
-            # Finalize the class code
-            constructors.append("  });")  # End constructor
-            from_json.append("  );")  # End fromJson
-            to_json.append("  };")  # End toJson
-            
-            # Combine all parts
-            class_code.extend(fields)
-            class_code.append("")  # Empty line for readability
-            class_code.extend(constructors)
-            class_code.append("")  # Empty line for readability
-            class_code.extend(from_json)
-            class_code.append("")  # Empty line for readability
-            class_code.extend(to_json)
-            class_code.append("}")  # End class
-            
-            return "\n".join(class_code)
+            # Add to toJson
+            to_json.append(f"    '{json_key}': {field_name},")
         
-        # Generate helper functions for JSON serialization
-        code = ["// To parse this JSON data, do", "//", f"//     final {class_name.lower()} = {class_name.lower()}FromJson(jsonString);", "", "import 'dart:convert';", ""]
+        # Finalize the class code
+        constructors.append("  });")
+        from_json.append("  );")
+        to_json.append("  };")
         
-        # Generate fromJson and toJson functions
-        code.append(f"{class_name} {class_name.lower()}FromJson(String str) => {class_name}.fromJson(json.decode(str));");
-        code.append(f"String {class_name.lower()}ToJson({class_name} data) => json.encode(data.toJson());");
-        code.append("")
-        
-        # Process the root object
-        root_class = generate_class(json_data, class_name)
-        code.append(root_class)
-        
-        # Process nested objects and arrays
-        def process_nested_objects(data, parent_name):
-            nested_classes = []
-            
-            for key, value in data.items():
-                if isinstance(value, dict):
-                    # Nested object, create a new class
-                    nested_class_name = f"{parent_name}{key.title().replace('_', '')}"
-                    nested_class = generate_class(value, nested_class_name)
-                    nested_classes.append(nested_class)
-                    nested_classes.extend(process_nested_objects(value, nested_class_name))
-                elif isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
-                    # List of objects, create a new class for the items
-                    item_class_name = f"{parent_name}{key.title().replace('_', '')}Item"
-                    item_class = generate_class(value[0], item_class_name)
-                    nested_classes.append(item_class)
-                    nested_classes.extend(process_nested_objects(value[0], item_class_name))
-            
-            return nested_classes
-        
-        # Add all nested classes
-        nested_classes = process_nested_objects(json_data, class_name)
-        if nested_classes:
-            code.append("")  # Empty line for readability
-            code.extend(nested_classes)
-        
-        return "\n".join(code)
-    
+        # Combine all parts
+        class_code.extend([""] + constructors + [""] + from_json + [""] + to_json + ["}"])
+        return "\n".join(class_code)
+
     @staticmethod
     def _generate_typescript_model(json_data: dict, class_name: str) -> str:
         """Generate a TypeScript model from JSON data."""
@@ -269,9 +184,7 @@ class QuicktypeService:
         logger.info("Listing supported languages")
         # These are the main languages supported by quicktype.io
         languages = [
-            "dart", "typescript", "kotlin", "swift", "python", "java", 
-            "csharp", "go", "ruby", "rust", "flow", "scala", "cpp", 
-            "objective-c", "elm", "schema", "pike", "haskell"
+            "dart", "typescript", "kotlin", "swift", "python", "java", "go"
         ]
         
         return {"languages": languages}
