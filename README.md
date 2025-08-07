@@ -1,15 +1,12 @@
 # Quicktype MCP Server
 
-An MCP (Model Context Protocol) server for generating models from JSON using the quicktype.io web API. This tool simplifies the process of creating type-safe models for various programming languages, with a focus on Flutter/Dart development.
+An MCP (Model Context Protocol) server for generating models from JSON. This tool simplifies the process of creating type-safe models for various programming languages.
 
 ## Features
 
 - No local dependencies (no Node.js or npm required)
 - Generates models from JSON input for multiple languages
-- Default focus on Dart for Flutter development
-- Simple command-line interface
 - Automatic JSON validation and fixing
-- Integrates with Windsurf MCP
 - Supports both interactive and file-based JSON input
 - Background server mode for continuous operation
 
@@ -95,22 +92,10 @@ The tool supports generating models for the following languages:
 - Swift
 - Python
 - Java
-- C#
 - Go
-- Ruby
-- Rust
-- Flow
-- Scala
-- C++
-- Objective-C
-- Elm
-- JSON Schema
-- Pike
-- Haskell
+
 
 ## Using with Windsurf MCP
-
-To use this MCP server with Windsurf, ensure the server is configured in your `windsurf_config.json`:
 
 ```json
 {
@@ -142,36 +127,6 @@ To use this MCP server with Windsurf, ensure the server is configured in your `w
    - Parameters:
      - `json_input`: The JSON string to fix
 
-### Example Usage in Python
-
-```python
-# Example of using the MCP client
-from mcp.client import MCPClient
-
-# Connect to the MCP server
-client = MCPClient("quicktype-mcp")
-
-# List supported languages
-languages = client.list_languages()
-print(languages)
-
-# Generate a model from JSON
-json_input = '{"name": "John", "age": 30}'
-result = client.generate_model(json_input=json_input, class_name="Person", language="dart")
-print(result["code"])
-
-# Fix invalid JSON
-invalid_json = '{"name": "John", "age": 30,}'
-result = client.fix_json(json_input=invalid_json)
-print(result["fixed_json"])
-```
-
-### Example Usage in Windsurf
-
-```python
-# Using the quicktype-mcp MCP server in Windsurf
-result = mcp1_generate_model(json_input='{"name": "John", "age": 30}', class_name="Person", language="dart")
-print(result["code"])
 ```
 
 ## Troubleshooting
@@ -179,9 +134,8 @@ print(result["code"])
 If you encounter issues with the server not running, make sure:
 
 1. You have an active internet connection
-2. The virtual environment is activated
-3. All dependencies are installed
-4. The correct Python version is being used (3.10+)
+2. All dependencies are installed
+3. The correct Python version is being used (3.10+)
 
 For issues with the generated models:
 1. Ensure your JSON is valid (use the `fix_json` tool if needed)
