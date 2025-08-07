@@ -1,0 +1,12 @@
+{
+  "quicktype-mcp": {
+    "command": "uv",
+    "args": [
+      "--directory",
+      "/Users/sayed/Documents/mcp/quicktype-mcp",
+      "run",
+      "cli.py",
+      "--windsurf"
+    ]
+  }
+}
