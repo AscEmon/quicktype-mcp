@@ -1,0 +1,40 @@
+{
+    "schema_version": "v1",
+    "name": "quicktype-mcp",
+    "display_name": "Quicktype Model Generator",
+    "description": "Generate type-safe Dart models from JSON data",
+    "contact_email": "sayedemon53@gmail.com",
+    "runtime": {
+      "type": "python",
+      "min_version": "3.10"
+    },
+    "entrypoint": "main.py",
+    "tools": [
+      {
+        "name": "generate_model",
+        "description": "Generate a model from JSON input",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "json_input": {
+              "type": "string",
+              "description": "The JSON string to generate a model from"
+            },
+            "class_name": {
+              "type": "string",
+              "description": "The name of the generated class",
+              "default": "Model"
+            },
+            "language": {
+              "type": "string",
+              "description": "The programming language to generate code for",
+              "default": "dart"
+            }
+          },
+          "required": ["json_input"]
+        }
+      }
+    ],
+    "categories": ["development", "code-generation"],
+    "tags": ["dart", "flutter", "json", "model", "code-generation"]
+  }
