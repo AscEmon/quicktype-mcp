@@ -1,7 +1,10 @@
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "quicktype-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "An MCP (Model Context Protocol) server specifically designed for generating Dart models from JSON. This tool simplifies the process of creating type-safe Dart models for Flutter and Dart applications."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
